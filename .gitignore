@@ -1,0 +1,23 @@
+# General
+.DS_Store
+*.swp
+*.swo
+
+# .NET / backend build artifacts
+backend/bin/
+backend/obj/
+backend/tests/bin/
+backend/tests/obj/
+**/*.user
+**/*.suo
+**/.vs/
+**/TestResults/
+
+# Local data files
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+
+# Node/frontend artifacts (frontend has local .gitignore too)
+frontend/node_modules/
+frontend/dist/

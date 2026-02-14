@@ -1,0 +1,50 @@
+using System.ComponentModel.DataAnnotations;
+using TodoApi.Domain.Enums;
+using DomainTaskStatus = TodoApi.Domain.Enums.TaskStatus;
+
+namespace TodoApi.Application.Contracts;
+
+public class TaskItemDto
+{
+    public Guid Id { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public DomainTaskStatus Status { get; init; }
+    public TaskPriority Priority { get; init; }
+    public DateTime? DueDate { get; init; }
+    public DateTime CreatedAtUtc { get; init; }
+    public DateTime UpdatedAtUtc { get; init; }
+    public DateTime? CompletedAtUtc { get; init; }
+}
+
+public class CreateTaskRequest
+{
+    [Required]
+    [MaxLength(120)]
+    public string Title { get; init; } = string.Empty;
+
+    [MaxLength(1000)]
+    public string? Description { get; init; }
+
+    public TaskPriority Priority { get; init; } = TaskPriority.Medium;
+    public DateTime? DueDate { get; init; }
+}
+
+public class UpdateTaskRequest
+{
+    [Required]
+    [MaxLength(120)]
+    public string Title { get; init; } = string.Empty;
+
+    [MaxLength(1000)]
+    public string? Description { get; init; }
+
+    public DomainTaskStatus Status { get; init; } = DomainTaskStatus.Todo;
+    public TaskPriority Priority { get; init; } = TaskPriority.Medium;
+    public DateTime? DueDate { get; init; }
+}
+
+public class UpdateTaskStatusRequest
+{
+    public DomainTaskStatus Status { get; init; }
+}
