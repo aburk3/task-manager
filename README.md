@@ -1,3 +1,9 @@
+
+
+
+https://github.com/user-attachments/assets/58f4b8bc-59bc-4764-9d40-917f8b031222
+
+
 # To-Do Task Manager (Full Stack)
 
 This project is a small production-leaning MVP task manager built with:
@@ -158,3 +164,4 @@ npm run test:run
 - Bulk actions and drag-and-drop prioritization.
 - Real-time sync via SignalR/WebSockets.
 - Audit trail/history for task changes.
+
