@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TodoApi.Application.Contracts;
 using TodoApi.Application.Exceptions;
+using TodoApi.Application.Interfaces;
 using TodoApi.Application.Services;
 using TodoApi.Domain.Entities;
 using TodoApi.Domain.Enums;
@@ -16,6 +17,7 @@ public class TaskServiceTests
     public async Task UpdateTaskStatusAsync_WhenStatusCompleted_SetsCompletionTimestamp()
     {
         AppDbContext dbContext = BuildDbContext();
+        ITaskRepository taskRepository = new TaskRepository(dbContext);
         TaskItem task = new()
         {
             Id = Guid.NewGuid(),
@@ -29,7 +31,7 @@ public class TaskServiceTests
         dbContext.Tasks.Add(task);
         await dbContext.SaveChangesAsync();
 
-        TaskService service = new(dbContext);
+        TaskService service = new(taskRepository);
         TaskItemDto result = await service.UpdateTaskStatusAsync(task.Id, DomainTaskStatus.Completed, CancellationToken.None);
 
         Assert.Equal(DomainTaskStatus.Completed, result.Status);
@@ -37,21 +39,23 @@ public class TaskServiceTests
     }
 
     [Fact]
-    public async Task GetTaskByIdAsync_WhenTaskMissing_ThrowsApiException()
+    public async Task GetTaskByIdAsync_WhenTaskMissing_ThrowsNotFoundException()
     {
         AppDbContext dbContext = BuildDbContext();
-        TaskService service = new(dbContext);
+        ITaskRepository taskRepository = new TaskRepository(dbContext);
+        TaskService service = new(taskRepository);
 
-        ApiException exception = await Assert.ThrowsAsync<ApiException>(() =>
+        NotFoundException exception = await Assert.ThrowsAsync<NotFoundException>(() =>
             service.GetTaskByIdAsync(Guid.NewGuid(), CancellationToken.None));
 
-        Assert.Equal(404, exception.StatusCode);
+        Assert.Equal("Task not found.", exception.Message);
     }
 
     [Fact]
     public async Task GetTasksAsync_AppliesStatusFilter()
     {
         AppDbContext dbContext = BuildDbContext();
+        ITaskRepository taskRepository = new TaskRepository(dbContext);
         DateTime utcNow = DateTime.UtcNow;
 
         dbContext.Tasks.AddRange(
@@ -77,7 +81,7 @@ public class TaskServiceTests
 
         await dbContext.SaveChangesAsync();
 
-        TaskService service = new(dbContext);
+        TaskService service = new(taskRepository);
         PagedResponse<TaskItemDto> response = await service.GetTasksAsync(
             new TaskQueryParameters { Status = DomainTaskStatus.Completed },
             CancellationToken.None);

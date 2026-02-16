@@ -110,6 +110,53 @@ public class TaskEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task GetTasks_WithInvalidSortBy_ReturnsBadRequest()
+    {
+        HttpResponseMessage response = await _client.GetAsync("/api/tasks?sortBy=invalidField");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTasks_WithInvalidSortDirection_ReturnsBadRequest()
+    {
+        HttpResponseMessage response = await _client.GetAsync("/api/tasks?sortDirection=up");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateTaskStatus_WithoutStatus_ReturnsBadRequest()
+    {
+        CreateTaskRequest createRequest = new()
+        {
+            Title = "Needs status update",
+            Priority = TaskPriority.Medium
+        };
+
+        HttpResponseMessage createResponse = await _client.PostAsJsonAsync("/api/tasks", createRequest);
+        TaskItemDto? created = await ReadJsonAsync<TaskItemDto>(createResponse);
+        Assert.NotNull(created);
+
+        using HttpRequestMessage patchRequest = new(HttpMethod.Patch, $"/api/tasks/{created!.Id}/status")
+        {
+            Content = JsonContent.Create(new { })
+        };
+        HttpResponseMessage patchResponse = await _client.SendAsync(patchRequest);
+
+        Assert.Equal(HttpStatusCode.BadRequest, patchResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetTaskById_WhenMissing_ReturnsNotFoundErrorPayload()
+    {
+        HttpResponseMessage response = await _client.GetAsync($"/api/tasks/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        string? message = document.RootElement.GetProperty("message").GetString();
+        Assert.Equal("Task not found.", message);
+    }
+
     private static async Task<T?> ReadJsonAsync<T>(HttpResponseMessage response)
     {
         string content = await response.Content.ReadAsStringAsync();

@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -47,9 +48,18 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    string xmlFileName = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    string xmlFilePath = Path.Combine(AppContext.BaseDirectory, xmlFileName);
+    if (File.Exists(xmlFilePath))
+    {
+        options.IncludeXmlComments(xmlFilePath);
+    }
+});
 
 var app = builder.Build();
 

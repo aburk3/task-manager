@@ -1,8 +1,4 @@
-
-
-
 https://github.com/user-attachments/assets/58f4b8bc-59bc-4764-9d40-917f8b031222
-
 
 # To-Do Task Manager (Full Stack)
 
@@ -71,7 +67,7 @@ dotnet run
 
 Default endpoints:
 
-- `GET /health`
+- `GET /api/health`
 - `GET /api/tasks`
 - `GET /api/tasks/{id}`
 - `POST /api/tasks`
@@ -164,4 +160,3 @@ npm run test:run
 - Bulk actions and drag-and-drop prioritization.
 - Real-time sync via SignalR/WebSockets.
 - Audit trail/history for task changes.
-

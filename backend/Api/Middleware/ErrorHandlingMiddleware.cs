@@ -20,10 +20,15 @@ public class ErrorHandlingMiddleware
         {
             await _next(context);
         }
-        catch (ApiException exception)
+        catch (NotFoundException exception)
         {
-            _logger.LogWarning(exception, "Handled API exception");
-            await WriteJsonErrorAsync(context, exception.StatusCode, exception.Message);
+            _logger.LogWarning(exception, "Handled not found exception");
+            await WriteJsonErrorAsync(context, StatusCodes.Status404NotFound, exception.Message);
+        }
+        catch (AppValidationException exception)
+        {
+            _logger.LogWarning(exception, "Handled validation exception");
+            await WriteJsonErrorAsync(context, StatusCodes.Status400BadRequest, exception.Message);
         }
         catch (Exception exception)
         {

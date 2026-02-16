@@ -4,6 +4,9 @@ using DomainTaskStatus = TodoApi.Domain.Enums.TaskStatus;
 
 namespace TodoApi.Application.Contracts;
 
+/// <summary>
+/// Represents a task item returned by the API.
+/// </summary>
 public class TaskItemDto
 {
     public Guid Id { get; init; }
@@ -17,6 +20,9 @@ public class TaskItemDto
     public DateTime? CompletedAtUtc { get; init; }
 }
 
+/// <summary>
+/// Request payload for creating a task.
+/// </summary>
 public class CreateTaskRequest
 {
     [Required]
@@ -30,6 +36,9 @@ public class CreateTaskRequest
     public DateTime? DueDate { get; init; }
 }
 
+/// <summary>
+/// Request payload for replacing an existing task.
+/// </summary>
 public class UpdateTaskRequest
 {
     [Required]
@@ -44,7 +53,11 @@ public class UpdateTaskRequest
     public DateTime? DueDate { get; init; }
 }
 
+/// <summary>
+/// Request payload for updating only task status.
+/// </summary>
 public class UpdateTaskStatusRequest
 {
-    public DomainTaskStatus Status { get; init; }
+    [Required]
+    public DomainTaskStatus? Status { get; init; }
 }

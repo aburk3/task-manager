@@ -1,55 +1,41 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using TodoApi.Application.Contracts;
 using TodoApi.Application.Exceptions;
 using TodoApi.Application.Interfaces;
 using TodoApi.Domain.Entities;
 using TodoApi.Domain.Enums;
-using TodoApi.Infrastructure.Persistence;
 using DomainTaskStatus = TodoApi.Domain.Enums.TaskStatus;
 
 namespace TodoApi.Application.Services;
 
 public class TaskService : ITaskService
 {
-    private readonly AppDbContext _dbContext;
-
-    public TaskService(AppDbContext dbContext)
+    private static readonly HashSet<string> AllowedSortBy = new(StringComparer.OrdinalIgnoreCase)
     {
-        _dbContext = dbContext;
+        "createdAt",
+        "dueDate",
+        "priority",
+        "status",
+        "title"
+    };
+
+    private static readonly HashSet<string> AllowedSortDirection = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "asc",
+        "desc"
+    };
+
+    private readonly ITaskRepository _taskRepository;
+
+    public TaskService(ITaskRepository taskRepository)
+    {
+        _taskRepository = taskRepository;
     }
 
     public async Task<PagedResponse<TaskItemDto>> GetTasksAsync(TaskQueryParameters query, CancellationToken cancellationToken)
     {
-        IQueryable<TaskItem> taskQuery = _dbContext.Tasks.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            string pattern = $"%{query.Search.Trim()}%";
-            taskQuery = taskQuery.Where(task =>
-                EF.Functions.Like(task.Title, pattern) ||
-                (task.Description != null && EF.Functions.Like(task.Description, pattern)));
-        }
-
-        if (query.Status.HasValue)
-        {
-            taskQuery = taskQuery.Where(task => task.Status == query.Status.Value);
-        }
-
-        if (query.Priority.HasValue)
-        {
-            taskQuery = taskQuery.Where(task => task.Priority == query.Priority.Value);
-        }
-
-        taskQuery = ApplySorting(taskQuery, query.SortBy, query.SortDirection);
-
-        int totalCount = await taskQuery.CountAsync(cancellationToken);
-
-        List<TaskItemDto> items = await taskQuery
-            .Skip((query.Page - 1) * query.PageSize)
-            .Take(query.PageSize)
-            .Select(task => MapToDto(task))
-            .ToListAsync(cancellationToken);
+        ValidateSorting(query);
+        (IReadOnlyList<TaskItem> tasks, int totalCount) = await _taskRepository.GetTasksAsync(query, cancellationToken);
+        List<TaskItemDto> items = tasks.Select(MapToDto).ToList();
 
         return new PagedResponse<TaskItemDto>
         {
@@ -62,9 +48,9 @@ public class TaskService : ITaskService
 
     public async Task<TaskItemDto> GetTaskByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        TaskItem? task = await _dbContext.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        TaskItem? task = await _taskRepository.GetByIdAsync(id, cancellationToken);
         return task is null
-            ? throw new ApiException("Task not found.", StatusCodes.Status404NotFound)
+            ? throw new NotFoundException("Task not found.")
             : MapToDto(task);
     }
 
@@ -83,8 +69,8 @@ public class TaskService : ITaskService
             UpdatedAtUtc = utcNow
         };
 
-        _dbContext.Tasks.Add(task);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _taskRepository.AddAsync(task, cancellationToken);
+        await _taskRepository.SaveChangesAsync(cancellationToken);
         return MapToDto(task);
     }
 
@@ -101,7 +87,7 @@ public class TaskService : ITaskService
             ? task.CompletedAtUtc ?? DateTime.UtcNow
             : null;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _taskRepository.SaveChangesAsync(cancellationToken);
         return MapToDto(task);
     }
 
@@ -113,40 +99,39 @@ public class TaskService : ITaskService
         task.UpdatedAtUtc = DateTime.UtcNow;
         task.CompletedAtUtc = status == DomainTaskStatus.Completed ? DateTime.UtcNow : null;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _taskRepository.SaveChangesAsync(cancellationToken);
         return MapToDto(task);
     }
 
     public async Task DeleteTaskAsync(Guid id, CancellationToken cancellationToken)
     {
         TaskItem task = await GetTrackedTaskByIdAsync(id, cancellationToken);
-        _dbContext.Tasks.Remove(task);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _taskRepository.Remove(task);
+        await _taskRepository.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<TaskItem> GetTrackedTaskByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        TaskItem? task = await _dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+        TaskItem? task = await _taskRepository.GetTrackedByIdAsync(id, cancellationToken);
         if (task is null)
         {
-            throw new ApiException("Task not found.", StatusCodes.Status404NotFound);
+            throw new NotFoundException("Task not found.");
         }
 
         return task;
     }
 
-    private static IQueryable<TaskItem> ApplySorting(IQueryable<TaskItem> query, string sortBy, string sortDirection)
+    private static void ValidateSorting(TaskQueryParameters query)
     {
-        bool ascending = string.Equals(sortDirection, "asc", StringComparison.OrdinalIgnoreCase);
-
-        return sortBy.ToLowerInvariant() switch
+        if (!AllowedSortBy.Contains(query.SortBy))
         {
-            "title" => ascending ? query.OrderBy(task => task.Title) : query.OrderByDescending(task => task.Title),
-            "priority" => ascending ? query.OrderBy(task => task.Priority) : query.OrderByDescending(task => task.Priority),
-            "status" => ascending ? query.OrderBy(task => task.Status) : query.OrderByDescending(task => task.Status),
-            "duedate" => ascending ? query.OrderBy(task => task.DueDate) : query.OrderByDescending(task => task.DueDate),
-            _ => ascending ? query.OrderBy(task => task.CreatedAtUtc) : query.OrderByDescending(task => task.CreatedAtUtc)
-        };
+            throw new AppValidationException($"SortBy must be one of: {string.Join(", ", AllowedSortBy)}.");
+        }
+
+        if (!AllowedSortDirection.Contains(query.SortDirection))
+        {
+            throw new AppValidationException("SortDirection must be one of: asc, desc.");
+        }
     }
 
     private static TaskItemDto MapToDto(TaskItem task)
