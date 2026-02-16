@@ -8,7 +8,7 @@ export const Page = styled.div`
 
 export const Main = styled.main`
   max-width: 1080px;
-  margin: 0 auto;
+  margin: clamp(0.75rem, 2.5vw, 2rem) auto;
   padding: 2rem 1rem 3rem;
   border-radius: 18px;
   background: ${({ theme }) => theme.colors.surface};
