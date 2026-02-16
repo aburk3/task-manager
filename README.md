@@ -14,7 +14,6 @@ It includes filtering, sorting, pagination, status workflow, optimistic updates,
 - `backend/` ASP.NET Core API and SQLite persistence
 - `backend/tests/` xUnit unit and integration tests
 - `frontend/` React application (Vite)
-- `CONVENTIONS.md` frontend coding conventions applied in `frontend/src`
 
 ## Prerequisites
 
