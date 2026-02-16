@@ -15,6 +15,7 @@ import {
   TextArea,
 } from './styles'
 import { TaskPriority } from '@/types/api'
+import { TASK_FORM_COPY, TASK_FORM_VALIDATION_MESSAGES } from './constants'
 
 export type TaskFormValues = {
   title: string
@@ -32,11 +33,13 @@ const taskFormSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, 'Title is required.')
-    .max(120, 'Title must be 120 characters or fewer.'),
-  description: z.string().max(1000, 'Description must be 1000 characters or fewer.'),
+    .min(1, TASK_FORM_VALIDATION_MESSAGES.titleRequired)
+    .max(120, TASK_FORM_VALIDATION_MESSAGES.titleMaxLength),
+  description: z.string().max(1000, TASK_FORM_VALIDATION_MESSAGES.descriptionMaxLength),
   priority: z.enum([TaskPriority.Low, TaskPriority.Medium, TaskPriority.High]),
-  dueDate: z.string().refine((value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value), 'Due Date must be a valid date.'),
+  dueDate: z
+    .string()
+    .refine((value) => value === '' || /^\d{4}-\d{2}-\d{2}$/.test(value), TASK_FORM_VALIDATION_MESSAGES.dueDateInvalid),
 })
 
 const INITIAL_VALUES: TaskFormValues = {
@@ -83,7 +86,7 @@ export const TaskForm = ({ onSubmit, isSubmitting }: TaskFormProps) => {
       await onSubmit(values)
       reset(INITIAL_VALUES)
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Unable to save task.')
+      setFormError(error instanceof Error ? error.message : TASK_FORM_COPY.submitErrorFallback)
     }
   })
 
@@ -91,7 +94,7 @@ export const TaskForm = ({ onSubmit, isSubmitting }: TaskFormProps) => {
     <Form onSubmit={onFormSubmit}>
       <FormRow>
         <Label htmlFor="task-title">
-          Title
+          {TASK_FORM_COPY.titleLabel}
           <RequiredMark aria-hidden="true">*</RequiredMark>
         </Label>
         <Input
@@ -100,27 +103,27 @@ export const TaskForm = ({ onSubmit, isSubmitting }: TaskFormProps) => {
           aria-invalid={Boolean(errors.title)}
           {...register('title')}
           maxLength={120}
-          placeholder="Add a task title"
+          placeholder={TASK_FORM_COPY.titlePlaceholder}
         />
         {errors.title ? <FieldError>{errors.title.message}</FieldError> : null}
       </FormRow>
 
       <FormRow>
-        <Label htmlFor="task-description">Description</Label>
+        <Label htmlFor="task-description">{TASK_FORM_COPY.descriptionLabel}</Label>
         <TextArea
           id="task-description"
           $hasError={Boolean(errors.description)}
           aria-invalid={Boolean(errors.description)}
           {...register('description')}
           maxLength={1000}
-          placeholder="Optional details"
+          placeholder={TASK_FORM_COPY.descriptionPlaceholder}
         />
         {errors.description ? <FieldError>{errors.description.message}</FieldError> : null}
       </FormRow>
 
       <FormRow>
         <Label htmlFor="task-priority">
-          Priority
+          {TASK_FORM_COPY.priorityLabel}
           <RequiredMark aria-hidden="true">*</RequiredMark>
         </Label>
         <Select id="task-priority" $hasError={Boolean(errors.priority)} aria-invalid={Boolean(errors.priority)} {...register('priority')}>
@@ -134,7 +137,7 @@ export const TaskForm = ({ onSubmit, isSubmitting }: TaskFormProps) => {
       </FormRow>
 
       <FormRow>
-        <Label htmlFor="task-dueDate">Due Date</Label>
+        <Label htmlFor="task-dueDate">{TASK_FORM_COPY.dueDateLabel}</Label>
         <Input
           id="task-dueDate"
           type="date"
@@ -149,7 +152,7 @@ export const TaskForm = ({ onSubmit, isSubmitting }: TaskFormProps) => {
 
       <Actions>
         <SubmitButton type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Add Task'}
+          {isSubmitting ? TASK_FORM_COPY.submitPending : TASK_FORM_COPY.submitIdle}
         </SubmitButton>
       </Actions>
     </Form>

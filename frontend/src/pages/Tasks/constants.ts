@@ -6,9 +6,17 @@ export const TASKS_PAGE_COPY = {
   subtitle: 'Track work with filtering, sorting, and status updates.',
   allTab: 'Active',
   completedTab: 'Completed',
+  searchPlaceholder: 'Search tasks',
   loading: 'Loading tasks...',
   empty: 'No tasks match the current filters.',
   errorPrefix: 'Unable to load tasks:',
+  unknownError: 'Unknown error',
+  showingPrefix: 'Showing',
+  showingSuffix: 'tasks',
+  previousPage: 'Previous',
+  nextPage: 'Next',
+  pagePrefix: 'Page',
+  pageSeparator: 'of',
 } as const
 
 export const STATUS_OPTIONS = [
@@ -19,4 +27,11 @@ export const STATUS_OPTIONS = [
 export const PRIORITY_OPTIONS = [
   { label: 'All priorities', value: '' },
   ...Object.values(TaskPriority).map((priority) => ({ label: priority, value: priority })),
+] as const
+
+export const SORT_OPTIONS = [
+  { label: 'Newest first', value: 'createdAt:desc' },
+  { label: 'Oldest first', value: 'createdAt:asc' },
+  { label: 'Due date soonest', value: 'dueDate:asc' },
+  { label: 'Priority high to low', value: 'priority:desc' },
 ] as const

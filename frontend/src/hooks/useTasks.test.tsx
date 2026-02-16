@@ -16,6 +16,10 @@ vi.mock('@/lib/api/client', () => ({
 }))
 
 describe('useTasks', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('loads tasks from API query', async () => {
     vi.mocked(taskApi.getTasks).mockResolvedValue({
       items: [
@@ -36,7 +40,13 @@ describe('useTasks', () => {
       pageSize: 10,
     })
 
-    const queryClient = new QueryClient()
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     )

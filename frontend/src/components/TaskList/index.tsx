@@ -2,6 +2,7 @@ import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
 import { formatTaskStatus } from '@/helpers/formatTaskStatus'
 import type { TaskItem } from '@/types/api'
 import { TaskStatus } from '@/types/api'
+import { getDeletePrompt, getMoveToLabel, TASK_LIST_COPY } from './constants'
 import {
   ActionButton,
   Actions,
@@ -33,12 +34,12 @@ const getNextStatus = (status: TaskStatus): TaskStatus => {
 
 const getDueText = (dueDate: string | null) => {
   if (!dueDate) {
-    return 'No due date'
+    return TASK_LIST_COPY.noDueDate
   }
 
   const parsedDate = parseISO(dueDate)
   if (isBefore(parsedDate, new Date())) {
-    return 'Overdue'
+    return TASK_LIST_COPY.overdue
   }
 
   return `Due ${formatDistanceToNow(parsedDate, { addSuffix: true })}`
@@ -60,24 +61,24 @@ export const TaskList = ({ tasks, onToggleStatus, onDelete }: TaskListProps) => 
 
             <Actions>
               <ActionButton type="button" onClick={() => void onToggleStatus(task)}>
-                Move to {formatTaskStatus(getNextStatus(task.status))}
+                {getMoveToLabel(getNextStatus(task.status))}
               </ActionButton>
               <ActionButton
                 $variant="danger"
                 type="button"
                 onClick={() => {
-                  const shouldDelete = window.confirm(`Delete "${task.title}"? This action cannot be undone.`)
+                  const shouldDelete = window.confirm(getDeletePrompt(task.title))
                   if (shouldDelete) {
                     void onDelete(task.id)
                   }
                 }}
               >
-                Delete
+                {TASK_LIST_COPY.deleteButton}
               </ActionButton>
             </Actions>
           </CardHeader>
 
-          <Description $status={task.status}>{task.description || 'No description provided.'}</Description>
+          <Description $status={task.status}>{task.description || TASK_LIST_COPY.noDescription}</Description>
         </Card>
       ))}
     </List>

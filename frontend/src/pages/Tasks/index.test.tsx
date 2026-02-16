@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react'
 import Tasks from '.'
+import { TASKS_PAGE_COPY } from './constants'
 import { renderWithProviders } from '@/test/test-utils'
 import { TaskPriority, TaskStatus } from '@/types/api'
 
@@ -11,6 +12,7 @@ vi.mock('@/hooks/useTasks', () => ({
 
 describe('Tasks page', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     useTasksMock.mockReturnValue({
       tasks: [],
       totalCount: 0,
@@ -34,7 +36,8 @@ describe('Tasks page', () => {
 
   it('shows empty state message', () => {
     renderWithProviders(<Tasks />)
-    expect(screen.getByText('No tasks match the current filters.')).toBeInTheDocument()
+    expect(screen.getByText(TASKS_PAGE_COPY.empty)).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 3 })).not.toBeInTheDocument()
   })
 
   it('renders task title when tasks are present', () => {
@@ -71,6 +74,6 @@ describe('Tasks page', () => {
     })
 
     renderWithProviders(<Tasks />)
-    expect(screen.getByText('Task A')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Task A', level: 3 })).toBeInTheDocument()
   })
 })

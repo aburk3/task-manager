@@ -5,7 +5,7 @@ import { Header, Main, Page, Title } from '@/components/Layout/styles'
 import { useTasks } from '@/hooks/useTasks'
 import { TaskStatus } from '@/types/api'
 import type { TaskPriority } from '@/types/api'
-import { PRIORITY_OPTIONS, TASKS_PAGE_COPY } from './constants'
+import { PRIORITY_OPTIONS, SORT_OPTIONS, TASKS_PAGE_COPY } from './constants'
 import {
   FilterBar,
   InlineMessage,
@@ -53,12 +53,12 @@ const Tasks = () => {
       return TASKS_PAGE_COPY.loading
     }
     if (isError) {
-      return `${TASKS_PAGE_COPY.errorPrefix} ${errorMessage ?? 'Unknown error'}`
+      return `${TASKS_PAGE_COPY.errorPrefix} ${errorMessage ?? TASKS_PAGE_COPY.unknownError}`
     }
     if (!visibleTasks.length) {
       return TASKS_PAGE_COPY.empty
     }
-    return `Showing ${visibleTasks.length} of ${totalCount} tasks`
+    return `${TASKS_PAGE_COPY.showingPrefix} ${visibleTasks.length} ${TASKS_PAGE_COPY.pageSeparator} ${totalCount} ${TASKS_PAGE_COPY.showingSuffix}`
   }, [errorMessage, isError, isLoading, totalCount, visibleTasks.length])
 
   return (
@@ -119,7 +119,7 @@ const Tasks = () => {
             <Input
               aria-label="Search"
               value={filters.search}
-              placeholder="Search tasks"
+              placeholder={TASKS_PAGE_COPY.searchPlaceholder}
               onChange={(event) => {
                 setPage(1)
                 setFilters((current) => ({ ...current, search: event.target.value }))
@@ -155,10 +155,11 @@ const Tasks = () => {
                 })
               }}
             >
-              <option value="createdAt:desc">Newest first</option>
-              <option value="createdAt:asc">Oldest first</option>
-              <option value="dueDate:asc">Due date soonest</option>
-              <option value="priority:desc">Priority high to low</option>
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </Select>
           </FilterBar>
         </Section>
@@ -187,13 +188,13 @@ const Tasks = () => {
 
         <PaginationRow>
           <PaginationButton type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            Previous
+            {TASKS_PAGE_COPY.previousPage}
           </PaginationButton>
           <InlineMessage>
-            Page {page} of {totalPages}
+            {TASKS_PAGE_COPY.pagePrefix} {page} {TASKS_PAGE_COPY.pageSeparator} {totalPages}
           </InlineMessage>
           <PaginationButton type="button" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-            Next
+            {TASKS_PAGE_COPY.nextPage}
           </PaginationButton>
         </PaginationRow>
       </Main>
